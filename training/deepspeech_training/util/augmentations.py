@@ -43,9 +43,9 @@ class GraphAugmentation(Augmentation):
     def apply_with_probability(self, tensor, transcript=None, clock=0.0):
         import tensorflow as tf  # pylint: disable=import-outside-toplevel
         rv = tf.random.stateless_uniform([], seed=(clock * tf.int32.min, clock * tf.int32.max))
-        return tf.cond(tf.less(rv, self.probability),
-                       lambda: self.apply(tensor, transcript=transcript, clock=clock),
-                       lambda: tensor)
+        return tf.cond(pred=tf.less(rv, self.probability),
+                       true_fn=lambda: self.apply(tensor, transcript=transcript, clock=clock),
+                       false_fn=lambda: tensor)
 
     def maybe_apply(self, domain, tensor, transcript=None, clock=0.0):
         if domain == self.domain:
@@ -380,22 +380,22 @@ class Pitch(GraphAugmentation):
 
     def apply(self, tensor, transcript=None, clock=0.0):
         import tensorflow as tf  # pylint: disable=import-outside-toplevel
-        original_shape = tf.shape(tensor)
+        original_shape = tf.shape(input=tensor)
         pitch = tf_pick_value_from_range(self.pitch, clock=clock)
         new_freq_size = tf.cast(tf.cast(original_shape[2], tf.float32) * pitch, tf.int32)
-        spectrogram_aug = tf.image.resize_bilinear(tf.expand_dims(tensor, -1), [original_shape[1], new_freq_size])
+        spectrogram_aug = tf.image.resize(tf.expand_dims(tensor, -1), [original_shape[1], new_freq_size], method=tf.image.ResizeMethod.BILINEAR)
         spectrogram_aug = tf.image.crop_to_bounding_box(spectrogram_aug,
                                                         offset_height=0,
                                                         offset_width=0,
                                                         target_height=original_shape[1],
                                                         target_width=tf.math.minimum(original_shape[2], new_freq_size))
-        spectrogram_aug = tf.cond(pitch < 1,
-                                  lambda: tf.image.pad_to_bounding_box(spectrogram_aug,
+        spectrogram_aug = tf.cond(pred=pitch < 1,
+                                  true_fn=lambda: tf.image.pad_to_bounding_box(spectrogram_aug,
                                                                        offset_height=0,
                                                                        offset_width=0,
-                                                                       target_height=tf.shape(spectrogram_aug)[1],
+                                                                       target_height=tf.shape(input=spectrogram_aug)[1],
                                                                        target_width=original_shape[2]),
-                                  lambda: spectrogram_aug)
+                                  false_fn=lambda: spectrogram_aug)
         return spectrogram_aug[:, :, :, 0]
 
 
@@ -409,13 +409,13 @@ class Tempo(GraphAugmentation):
     def apply(self, tensor, transcript=None, clock=0.0):
         import tensorflow as tf  # pylint: disable=import-outside-toplevel
         factor = tf_pick_value_from_range(self.factor, clock=clock)
-        original_shape = tf.shape(tensor)
+        original_shape = tf.shape(input=tensor)
         new_time_size = tf.cast(tf.cast(original_shape[1], tf.float32) / factor, tf.int32)
         if transcript is not None:
-            new_time_size = tf.math.maximum(new_time_size, tf.shape(transcript)[1])
+            new_time_size = tf.math.maximum(new_time_size, tf.shape(input=transcript)[1])
         if self.max_time > 0:
             new_time_size = tf.math.minimum(new_time_size, tf.cast(self.max_time * self.units_per_ms(), tf.int32))
-        spectrogram_aug = tf.image.resize_bilinear(tf.expand_dims(tensor, -1), [new_time_size, original_shape[2]])
+        spectrogram_aug = tf.image.resize(tf.expand_dims(tensor, -1), [new_time_size, original_shape[2]], method=tf.image.ResizeMethod.BILINEAR)
         return spectrogram_aug[:, :, :, 0]
 
 
@@ -430,7 +430,7 @@ class Warp(GraphAugmentation):
 
     def apply(self, tensor, transcript=None, clock=0.0):
         import tensorflow as tf  # pylint: disable=import-outside-toplevel
-        original_shape = tf.shape(tensor)
+        original_shape = tf.shape(input=tensor)
         size_t, size_f = original_shape[1], original_shape[2]
         seed = (clock * tf.int32.min, clock * tf.int32.max)
         num_t = tf_pick_value_from_range(self.num_t, clock=clock)
@@ -440,10 +440,10 @@ class Warp(GraphAugmentation):
             warp = tf_pick_value_from_range(warp, clock=clock)
             warp = warp * tf.cast(size, dtype=tf.float32) / tf.cast(2 * (n + 1), dtype=tf.float32)
             f = tf.random.stateless_normal([num_t, num_f], seed, mean=0.0, stddev=warp, dtype=tf.float32)
-            return tf.pad(f, tf.constant([[1, 1], [1, 1]]), 'CONSTANT')  # zero flow at all edges
+            return tf.pad(tensor=f, paddings=tf.constant([[1, 1], [1, 1]]), mode='CONSTANT')  # zero flow at all edges
 
         flows = tf.stack([get_flows(num_t, size_t, self.warp_t), get_flows(num_f, size_f, self.warp_f)], axis=2)
-        flows = tf.image.resize_bicubic(tf.expand_dims(flows, 0), [size_t, size_f])
+        flows = tf.image.resize(tf.expand_dims(flows, 0), [size_t, size_f], method=tf.image.ResizeMethod.BICUBIC)
         spectrogram_aug = tf.contrib.image.dense_image_warp(tf.expand_dims(tensor, -1), flows)
         return tf.reshape(spectrogram_aug, shape=(1, -1, size_f))
 
@@ -457,8 +457,8 @@ class FrequencyMask(GraphAugmentation):
 
     def apply(self, tensor, transcript=None, clock=0.0):
         import tensorflow as tf  # pylint: disable=import-outside-toplevel
-        time_max = tf.shape(tensor)[1]
-        freq_max = tf.shape(tensor)[2]
+        time_max = tf.shape(input=tensor)[1]
+        freq_max = tf.shape(input=tensor)[2]
         n = tf_pick_value_from_range(self.n, clock=clock)
 
         def body(i, spectrogram_aug):
@@ -471,7 +471,7 @@ class FrequencyMask(GraphAugmentation):
                                    tf.ones([1, time_max, freq_max - f0 - size])], axis=2)
             return i + 1, spectrogram_aug * freq_mask
 
-        return tf.while_loop(lambda i, spectrogram_aug: i < n, body, (0, tensor))[1]
+        return tf.while_loop(cond=lambda i, spectrogram_aug: i < n, body=body, loop_vars=(0, tensor))[1]
 
 
 class TimeMask(GraphAugmentation):
@@ -483,7 +483,7 @@ class TimeMask(GraphAugmentation):
 
     def apply(self, tensor, transcript=None, clock=0.0):
         import tensorflow as tf  # pylint: disable=import-outside-toplevel
-        time_max = tf.shape(tensor)[0 if self.domain == 'signal' else 1]
+        time_max = tf.shape(input=tensor)[0 if self.domain == 'signal' else 1]
         n = tf_pick_value_from_range(self.n, clock=clock)
 
         def body(i, augmented):
@@ -493,7 +493,7 @@ class TimeMask(GraphAugmentation):
             t0 = tf.random.stateless_uniform((), (-seed, seed), minval=0, maxval=time_max - size, dtype=tf.dtypes.int32)
             rest = time_max - t0 - size
             if self.domain == 'spectrogram':
-                fm = tf.shape(tensor)[2]
+                fm = tf.shape(input=tensor)[2]
                 time_mask = tf.concat([tf.ones([1, t0, fm]), tf.zeros([1, size, fm]), tf.ones([1, rest, fm])], axis=1)
             elif self.domain == 'signal':
                 time_mask = tf.concat([tf.ones([t0, 1]), tf.zeros([size, 1]), tf.ones([rest, 1])], axis=0)
@@ -501,7 +501,7 @@ class TimeMask(GraphAugmentation):
                 time_mask = tf.concat([tf.ones([1, t0]), tf.zeros([1, size]), tf.ones([1, rest])], axis=1)
             return i + 1, augmented * time_mask
 
-        return tf.while_loop(lambda i, augmented: i < n, body, (0, tensor))[1]
+        return tf.while_loop(cond=lambda i, augmented: i < n, body=body, loop_vars=(0, tensor))[1]
 
 
 class Dropout(GraphAugmentation):
@@ -514,7 +514,7 @@ class Dropout(GraphAugmentation):
         import tensorflow as tf  # pylint: disable=import-outside-toplevel
         rate = tf_pick_value_from_range(self.rate, clock=clock)
         rate = tf.math.maximum(0.0, rate)
-        factors = tf.random.stateless_uniform(tf.shape(tensor),
+        factors = tf.random.stateless_uniform(tf.shape(input=tensor),
                                               (clock * tf.int32.min, clock * tf.int32.max),
                                               minval=0.0,
                                               maxval=1.0,
@@ -532,7 +532,7 @@ class Add(GraphAugmentation):
         import tensorflow as tf  # pylint: disable=import-outside-toplevel
         stddev = tf_pick_value_from_range(self.stddev, clock=clock)
         seed = (clock * tf.int32.min, clock * tf.int32.max)
-        return tensor + tf.random.stateless_normal(tf.shape(tensor), seed, mean=0.0, stddev=stddev)
+        return tensor + tf.random.stateless_normal(tf.shape(input=tensor), seed, mean=0.0, stddev=stddev)
 
 
 class Multiply(GraphAugmentation):
@@ -545,4 +545,4 @@ class Multiply(GraphAugmentation):
         import tensorflow as tf  # pylint: disable=import-outside-toplevel
         stddev = tf_pick_value_from_range(self.stddev, clock=clock)
         seed = (clock * tf.int32.min, clock * tf.int32.max)
-        return tensor * tf.random.stateless_normal(tf.shape(tensor), seed, mean=1.0, stddev=stddev)
+        return tensor * tf.random.stateless_normal(tf.shape(input=tensor), seed, mean=1.0, stddev=stddev)

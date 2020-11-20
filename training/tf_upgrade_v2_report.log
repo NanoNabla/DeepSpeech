@@ -1,0 +1,235 @@
+TensorFlow 2.0 Upgrade Script
+-----------------------------
+Converted 21 files
+Detected 13 issues that require attention
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+File: training/deepspeech_training/train.py
+--------------------------------------------------------------------------------
+training/deepspeech_training/train.py:89:21: WARNING: tf.contrib.layers.layer_norm requires manual check. (Manual edit required) `tf.contrib.layers.layer_norm` has been deprecated, and its implementation has been integrated with `tf.keras.layers.LayerNormalization` in TensorFlow 2.0. Note that, the default value of `epsilon` is changed to `1e-3` in the new API from `1e-12`, and this may introduce numerical differences. Please check the new API and use that instead.
+training/deepspeech_training/train.py:89:21: ERROR: Using member tf.contrib.layers.layer_norm in deprecated module tf.contrib. tf.contrib.layers.layer_norm cannot be converted automatically. tf.contrib will not be distributed with TensorFlow 2.0, please consider an alternative in non-contrib TensorFlow, a community-maintained repository such as tensorflow/addons, or fork the required code.
+training/deepspeech_training/train.py:92:17: ERROR: tf.nn.dropout called without arguments, so automatic fix was disabled. tf.nn.dropout has changed the semantics of the second argument.
+training/deepspeech_training/train.py:99:18: WARNING: Using member tf.contrib.rnn.LSTMBlockFusedCell in deprecated module tf.contrib.rnn. (Manual edit required) tf.contrib.rnn.* has been deprecated, and widely used cells/functions will be moved to tensorflow/addons repository. Please check it there and file Github issues if necessary.
+training/deepspeech_training/train.py:99:18: ERROR: Using member tf.contrib.rnn.LSTMBlockFusedCell in deprecated module tf.contrib. tf.contrib.rnn.LSTMBlockFusedCell cannot be converted automatically. tf.contrib will not be distributed with TensorFlow 2.0, please consider an alternative in non-contrib TensorFlow, a community-maintained repository such as tensorflow/addons, or fork the required code.
+training/deepspeech_training/train.py:124:18: WARNING: Using member tf.contrib.cudnn_rnn.CudnnLSTM in deprecated module tf.contrib.cudnn_rnn. (Manual edit required) tf.contrib.cudnn_rnn.* has been deprecated, and the CuDNN kernel has been integrated with tf.keras.layers.LSTM/GRU in TensorFlow 2.0. Please check the new API and use that instead.
+training/deepspeech_training/train.py:124:18: ERROR: Using member tf.contrib.cudnn_rnn.CudnnLSTM in deprecated module tf.contrib. tf.contrib.cudnn_rnn.CudnnLSTM cannot be converted automatically. tf.contrib will not be distributed with TensorFlow 2.0, please consider an alternative in non-contrib TensorFlow, a community-maintained repository such as tensorflow/addons, or fork the required code.
+training/deepspeech_training/train.py:589:20: WARNING: *.save requires manual check. (This warning is only applicable if the code saves a tf.Keras model) Keras model.save now saves to the Tensorflow SavedModel format by default, instead of HDF5. To continue saving to HDF5, add the argument save_format='h5' to the save() function.
+training/deepspeech_training/train.py:607:16: WARNING: *.save requires manual check. (This warning is only applicable if the code saves a tf.Keras model) Keras model.save now saves to the Tensorflow SavedModel format by default, instead of HDF5. To continue saving to HDF5, add the argument save_format='h5' to the save() function.
+training/deepspeech_training/train.py:633:36: WARNING: *.save requires manual check. (This warning is only applicable if the code saves a tf.Keras model) Keras model.save now saves to the Tensorflow SavedModel format by default, instead of HDF5. To continue saving to HDF5, add the argument save_format='h5' to the save() function.
+training/deepspeech_training/train.py:660:36: WARNING: *.save requires manual check. (This warning is only applicable if the code saves a tf.Keras model) Keras model.save now saves to the Tensorflow SavedModel format by default, instead of HDF5. To continue saving to HDF5, add the argument save_format='h5' to the save() function.
+--------------------------------------------------------------------------------
+File: training/deepspeech_training/util/augmentations.py
+--------------------------------------------------------------------------------
+training/deepspeech_training/util/augmentations.py:447:26: WARNING: tf.contrib.image.dense_image_warp requires manual check. (Manual edit required) `tf.contrib.image.dense_image_warp` has been migrated to `tfa.image.dense_image_warp` in TensorFlow Addons. The API spec may have changed during the migration. Please see https://github.com/tensorflow/addons for more info.
+training/deepspeech_training/util/augmentations.py:447:26: ERROR: Using member tf.contrib.image.dense_image_warp in deprecated module tf.contrib. tf.contrib.image.dense_image_warp cannot be converted automatically. tf.contrib will not be distributed with TensorFlow 2.0, please consider an alternative in non-contrib TensorFlow, a community-maintained repository such as tensorflow/addons, or fork the required code.
+================================================================================
+Detailed log follows:
+
+================================================================================
+================================================================================
+Input tree: 'training'
+================================================================================
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/train.py'
+ outputting to 'training_v2/deepspeech_training/train.py'
+--------------------------------------------------------------------------------
+
+89:21: WARNING: tf.contrib.layers.layer_norm requires manual check. (Manual edit required) `tf.contrib.layers.layer_norm` has been deprecated, and its implementation has been integrated with `tf.keras.layers.LayerNormalization` in TensorFlow 2.0. Note that, the default value of `epsilon` is changed to `1e-3` in the new API from `1e-12`, and this may introduce numerical differences. Please check the new API and use that instead.
+89:21: ERROR: Using member tf.contrib.layers.layer_norm in deprecated module tf.contrib. tf.contrib.layers.layer_norm cannot be converted automatically. tf.contrib will not be distributed with TensorFlow 2.0, please consider an alternative in non-contrib TensorFlow, a community-maintained repository such as tensorflow/addons, or fork the required code.
+92:17: ERROR: tf.nn.dropout called without arguments, so automatic fix was disabled. tf.nn.dropout has changed the semantics of the second argument.
+99:18: WARNING: Using member tf.contrib.rnn.LSTMBlockFusedCell in deprecated module tf.contrib.rnn. (Manual edit required) tf.contrib.rnn.* has been deprecated, and widely used cells/functions will be moved to tensorflow/addons repository. Please check it there and file Github issues if necessary.
+99:18: ERROR: Using member tf.contrib.rnn.LSTMBlockFusedCell in deprecated module tf.contrib. tf.contrib.rnn.LSTMBlockFusedCell cannot be converted automatically. tf.contrib will not be distributed with TensorFlow 2.0, please consider an alternative in non-contrib TensorFlow, a community-maintained repository such as tensorflow/addons, or fork the required code.
+124:18: WARNING: Using member tf.contrib.cudnn_rnn.CudnnLSTM in deprecated module tf.contrib.cudnn_rnn. (Manual edit required) tf.contrib.cudnn_rnn.* has been deprecated, and the CuDNN kernel has been integrated with tf.keras.layers.LSTM/GRU in TensorFlow 2.0. Please check the new API and use that instead.
+124:18: ERROR: Using member tf.contrib.cudnn_rnn.CudnnLSTM in deprecated module tf.contrib. tf.contrib.cudnn_rnn.CudnnLSTM cannot be converted automatically. tf.contrib will not be distributed with TensorFlow 2.0, please consider an alternative in non-contrib TensorFlow, a community-maintained repository such as tensorflow/addons, or fork the required code.
+313:21: INFO: `name` passed to `name_scope`. Because you may be re-entering an existing scope, it is not safe to convert automatically,  the v2 name_scope does not support re-entering scopes by name.
+
+313:21: INFO: Renamed 'tf.name_scope' to 'tf.compat.v1.name_scope'
+589:20: WARNING: *.save requires manual check. (This warning is only applicable if the code saves a tf.Keras model) Keras model.save now saves to the Tensorflow SavedModel format by default, instead of HDF5. To continue saving to HDF5, add the argument save_format='h5' to the save() function.
+607:16: WARNING: *.save requires manual check. (This warning is only applicable if the code saves a tf.Keras model) Keras model.save now saves to the Tensorflow SavedModel format by default, instead of HDF5. To continue saving to HDF5, add the argument save_format='h5' to the save() function.
+633:36: WARNING: *.save requires manual check. (This warning is only applicable if the code saves a tf.Keras model) Keras model.save now saves to the Tensorflow SavedModel format by default, instead of HDF5. To continue saving to HDF5, add the argument save_format='h5' to the save() function.
+660:36: WARNING: *.save requires manual check. (This warning is only applicable if the code saves a tf.Keras model) Keras model.save now saves to the Tensorflow SavedModel format by default, instead of HDF5. To continue saving to HDF5, add the argument save_format='h5' to the save() function.
+708:25: INFO: Renamed 'tf.nn.rnn_cell.LSTMStateTuple' to 'tf.compat.v1.nn.rnn_cell.LSTMStateTuple'
+807:9: INFO: Renamed 'tf.Session' to 'tf.compat.v1.Session'
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/evaluate.py'
+ outputting to 'training_v2/deepspeech_training/evaluate.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/__init__.py'
+ outputting to 'training_v2/deepspeech_training/__init__.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/taskcluster.py'
+ outputting to 'training_v2/deepspeech_training/util/taskcluster.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/checkpoints.py'
+ outputting to 'training_v2/deepspeech_training/util/checkpoints.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/flags.py'
+ outputting to 'training_v2/deepspeech_training/util/flags.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/evaluate_tools.py'
+ outputting to 'training_v2/deepspeech_training/util/evaluate_tools.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/helpers.py'
+ outputting to 'training_v2/deepspeech_training/util/helpers.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/text.py'
+ outputting to 'training_v2/deepspeech_training/util/text.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/sample_collections.py'
+ outputting to 'training_v2/deepspeech_training/util/sample_collections.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/check_characters.py'
+ outputting to 'training_v2/deepspeech_training/util/check_characters.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/gpu.py'
+ outputting to 'training_v2/deepspeech_training/util/gpu.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/downloader.py'
+ outputting to 'training_v2/deepspeech_training/util/downloader.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/feeding.py'
+ outputting to 'training_v2/deepspeech_training/util/feeding.py'
+--------------------------------------------------------------------------------
+
+25:8: INFO: Added keywords to args of function 'tf.cond'
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/config.py'
+ outputting to 'training_v2/deepspeech_training/util/config.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/stm.py'
+ outputting to 'training_v2/deepspeech_training/util/stm.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/augmentations.py'
+ outputting to 'training_v2/deepspeech_training/util/augmentations.py'
+--------------------------------------------------------------------------------
+
+46:15: INFO: Added keywords to args of function 'tf.cond'
+383:25: INFO: Added keywords to args of function 'tf.shape'
+386:26: INFO: Changed tf.image.resize_bilinear call to tf.image.resize(..., method=tf.image.ResizeMethod.BILINEAR).
+392:26: INFO: Added keywords to args of function 'tf.cond'
+396:85: INFO: Added keywords to args of function 'tf.shape'
+412:25: INFO: Added keywords to args of function 'tf.shape'
+415:59: INFO: Added keywords to args of function 'tf.shape'
+418:26: INFO: Changed tf.image.resize_bilinear call to tf.image.resize(..., method=tf.image.ResizeMethod.BILINEAR).
+433:25: INFO: Added keywords to args of function 'tf.shape'
+443:19: INFO: Added keywords to args of function 'tf.pad'
+446:16: INFO: Changed tf.image.resize_bicubic call to tf.image.resize(..., method=tf.image.ResizeMethod.BICUBIC).
+447:26: WARNING: tf.contrib.image.dense_image_warp requires manual check. (Manual edit required) `tf.contrib.image.dense_image_warp` has been migrated to `tfa.image.dense_image_warp` in TensorFlow Addons. The API spec may have changed during the migration. Please see https://github.com/tensorflow/addons for more info.
+447:26: ERROR: Using member tf.contrib.image.dense_image_warp in deprecated module tf.contrib. tf.contrib.image.dense_image_warp cannot be converted automatically. tf.contrib will not be distributed with TensorFlow 2.0, please consider an alternative in non-contrib TensorFlow, a community-maintained repository such as tensorflow/addons, or fork the required code.
+460:19: INFO: Added keywords to args of function 'tf.shape'
+461:19: INFO: Added keywords to args of function 'tf.shape'
+474:15: INFO: Added keywords to args of function 'tf.while_loop'
+486:19: INFO: Added keywords to args of function 'tf.shape'
+496:21: INFO: Added keywords to args of function 'tf.shape'
+504:15: INFO: Added keywords to args of function 'tf.while_loop'
+517:46: INFO: Added keywords to args of function 'tf.shape'
+535:51: INFO: Added keywords to args of function 'tf.shape'
+548:51: INFO: Added keywords to args of function 'tf.shape'
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/logging.py'
+ outputting to 'training_v2/deepspeech_training/util/logging.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/importers.py'
+ outputting to 'training_v2/deepspeech_training/util/importers.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/__init__.py'
+ outputting to 'training_v2/deepspeech_training/util/__init__.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+Processing file 'training/deepspeech_training/util/audio.py'
+ outputting to 'training_v2/deepspeech_training/util/audio.py'
+--------------------------------------------------------------------------------
+
+
+--------------------------------------------------------------------------------
+

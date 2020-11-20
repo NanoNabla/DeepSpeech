@@ -22,10 +22,10 @@ def audio_to_features(audio, sample_rate, transcript=None, clock=0.0, train_phas
     if train_phase:
         # We need the lambdas to make TensorFlow happy.
         # pylint: disable=unnecessary-lambda
-        tf.cond(tf.math.not_equal(sample_rate, FLAGS.audio_sample_rate),
-                lambda: tf.print('WARNING: sample rate of sample', sample_id, '(', sample_rate, ') '
+        tf.cond(pred=tf.math.not_equal(sample_rate, FLAGS.audio_sample_rate),
+                true_fn=lambda: tf.print('WARNING: sample rate of sample', sample_id, '(', sample_rate, ') '
                                  'does not match FLAGS.audio_sample_rate. This can lead to incorrect results.'),
-                lambda: tf.no_op(),
+                false_fn=lambda: tf.no_op(),
                 name='matching_sample_rate')
 
     if train_phase and augmentations is not None:

@@ -310,7 +310,7 @@ def get_tower_results(iterator, optimizer, dropout_rates):
             device = Config.available_devices[i]
             with tf.device(device):
                 # Create a scope for all operations of tower i
-                with tf.name_scope('tower_%d' % i):
+                with tf.compat.v1.name_scope('tower_%d' % i):
                     # Calculate the avg_loss and mean_edit_distance and retrieve the decoded
                     # batch along with the original batch's labels (Y) of this tower
                     avg_loss, non_finite_files = calculate_mean_edit_distance_and_loss(iterator, dropout_rates, reuse=i > 0)
@@ -705,7 +705,7 @@ def create_inference_graph(batch_size=1, n_steps=16, tflite=False):
         previous_state_c = tfv1.placeholder(tf.float32, [batch_size, Config.n_cell_dim], name='previous_state_c')
         previous_state_h = tfv1.placeholder(tf.float32, [batch_size, Config.n_cell_dim], name='previous_state_h')
 
-        previous_state = tf.nn.rnn_cell.LSTMStateTuple(previous_state_c, previous_state_h)
+        previous_state = tf.compat.v1.nn.rnn_cell.LSTMStateTuple(previous_state_c, previous_state_h)
 
     # One rate per layer
     no_dropout = [None] * 6
@@ -804,7 +804,7 @@ def export():
     output_names_ops = [op.name for op in outputs.values() if isinstance(op, tf.Operation)]
     output_names = output_names_tensors + output_names_ops
 
-    with tf.Session() as session:
+    with tf.compat.v1.Session() as session:
         # Restore variables from checkpoint
         load_graph_for_evaluation(session)
 
