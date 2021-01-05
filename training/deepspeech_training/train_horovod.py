@@ -29,6 +29,7 @@ from .util.feeding import create_dataset, audio_to_features
 from .util.flags import create_flags, FLAGS
 from .util.helpers import check_ctcdecoder_version, ExceptionBox
 from .util.logging import create_progressbar, log_debug, log_error, log_info, log_progress
+from .util.io import open_remote, remove_remote, listdir_remote, is_remote_path, isdir_remote
 
 from .train import create_optimizer, get_tower_results, average_gradients, log_grads_and_vars, rnn_impl_static_rnn, \
     rnn_impl_lstmblockfusedcell, create_model, export, test, do_single_file_inference, package_zip, \
@@ -156,9 +157,10 @@ def train():
     # best_dev_path = os.path.join(FLAGS.save_checkpoint_dir, 'best_dev')
     #
     # # Save flags next to checkpoints
-    # os.makedirs(FLAGS.save_checkpoint_dir, exist_ok=True)
+    # if not is_remote_path(FLAGS.save_checkpoint_dir):
+    #     os.makedirs(FLAGS.save_checkpoint_dir, exist_ok=True)
     # flags_file = os.path.join(FLAGS.save_checkpoint_dir, 'flags.txt')
-    # with open(flags_file, 'w') as fout:
+    # with open_remote(flags_file, 'w') as fout:
     #     fout.write(FLAGS.flags_into_string())
 
     # Save checkpoints only on worker 0 to prevent other workers from corrupting them.
@@ -191,7 +193,7 @@ def train():
                 feature_cache_index = FLAGS.feature_cache + '.index'
                 if epoch % FLAGS.cache_for_epochs == 0 and os.path.isfile(feature_cache_index):
                     log_info('Invalidating feature cache')
-                    os.remove(feature_cache_index)  # this will let TF also overwrite the related cache data files
+                    remove_remote(feature_cache_index)  # this will let TF also overwrite the related cache data files
 
             # Setup progress bar
             class LossWidget(progressbar.widgets.FormatLabel):
@@ -353,7 +355,7 @@ def main(_):
             tfv1.reset_default_graph()
             FLAGS.export_tflite = True
 
-            if os.listdir(FLAGS.export_dir):
+            if listdir_remote(FLAGS.export_dir):
                 log_error('Directory {} is not empty, please fix this.'.format(FLAGS.export_dir))
                 sys.exit(1)
 
