@@ -35,7 +35,13 @@ from .train import create_optimizer, get_tower_results, average_gradients, log_g
     rnn_impl_lstmblockfusedcell, create_model, export, test, do_single_file_inference, package_zip, \
     early_training_checks
 
-import horovod.tensorflow as hvd
+try:
+    import horovod.tensorflow as hvd
+except ImportError as e:
+    print(
+        "Error importing Horovod. Did you installed DeepSpeech with -DNOHOROVOD? "
+        "If you do not want to use horovod, use 'from deepspeech_training import train'")
+    raise e
 
 check_ctcdecoder_version()
 
