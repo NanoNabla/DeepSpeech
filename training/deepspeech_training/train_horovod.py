@@ -23,15 +23,15 @@ tfv1.logging.set_verbosity({
                            }.get(DESIRED_LOG_LEVEL))
 
 from datetime import datetime
-from .util.config import Config, initialize_globals
+from .util.config_horovod import Config, initialize_globals
 from .util.checkpoints import load_or_init_graph_for_training, reload_best_checkpoint
-from .util.feeding import create_dataset
+from .util.feeding_horovod import create_dataset
 from .util.flags import create_flags, FLAGS
 from .util.helpers import check_ctcdecoder_version, ExceptionBox
 from .util.logging import create_progressbar, log_debug, log_error, log_info, log_progress
 from .util.io import remove_remote, listdir_remote
 
-from .train import create_optimizer, get_tower_results, average_gradients, log_grads_and_vars, export, test, \
+from .train import create_optimizer, average_gradients,calculate_mean_edit_distance_and_loss, log_grads_and_vars, export, test, \
     do_single_file_inference, package_zip, \
     early_training_checks
 
@@ -51,9 +51,7 @@ def initialize_horovod():
     # Pin GPU to be used to process local rank (one GPU per process)
     Config.visible_device_list = str(hvd.local_rank())
 
-    # TODO maybe set this?
-    #Config.available_devices = str(hvd.local_rank())
-
+    Config.num_gpu = hvd.size()
 
 def train():
     exception_box = ExceptionBox()
@@ -66,7 +64,7 @@ def train():
                                cache_path=FLAGS.feature_cache,
                                train_phase=True,
                                exception_box=exception_box,
-                               process_ahead=len(Config.available_devices) * FLAGS.train_batch_size * 2,
+                               process_ahead=Config.num_gpu * FLAGS.train_batch_size * 2,
                                reverse=FLAGS.reverse_train,
                                limit=FLAGS.limit_train,
                                buffering=FLAGS.read_buffer)
@@ -84,7 +82,7 @@ def train():
                                    batch_size=FLAGS.dev_batch_size,
                                    train_phase=False,
                                    exception_box=exception_box,
-                                   process_ahead=len(Config.available_devices) * FLAGS.dev_batch_size * 2,
+                                   process_ahead=Config.num_gpu * FLAGS.dev_batch_size * 2,
                                    reverse=FLAGS.reverse_dev,
                                    limit=FLAGS.limit_dev,
                                    buffering=FLAGS.read_buffer) for source in dev_sources]
@@ -96,7 +94,7 @@ def train():
                                        batch_size=FLAGS.dev_batch_size,
                                        train_phase=False,
                                        exception_box=exception_box,
-                                       process_ahead=len(Config.available_devices) * FLAGS.dev_batch_size * 2,
+                                       process_ahead=Config.num_gpu * FLAGS.dev_batch_size * 2,
                                        reverse=FLAGS.reverse_dev,
                                        limit=FLAGS.limit_dev,
                                        buffering=FLAGS.read_buffer) for source in metrics_sources]
@@ -129,19 +127,28 @@ def train():
         log_info('Enabling automatic mixed precision training.')
         optimizer = tfv1.train.experimental.enable_mixed_precision_graph_rewrite(optimizer)
 
-    gradients, loss, non_finite_files = get_tower_results(iterator, optimizer, dropout_rates)
+#    gradients, loss, non_finite_files = get_tower_results(iterator, optimizer, dropout_rates)
+
 
     # Average tower gradients across GPUs
-    avg_tower_gradients = average_gradients(gradients)
-    log_grads_and_vars(avg_tower_gradients)
+#    avg_tower_gradients = average_gradients(gradients)
+#    log_grads_and_vars(avg_tower_gradients)
+
+    loss, non_finite_files = calculate_mean_edit_distance_and_loss(iterator, dropout_rates, reuse=False)
+    gradients = optimizer.compute_gradients(loss)
 
     # Add hook to broadcast variables from rank 0 to all other processes during
     # initialization.
-    hooks = [hvd.BroadcastGlobalVariablesHook(0)]
+#    hooks = [
+#        hvd.BroadcastGlobalVariablesHook(0)
+
+#        tf.train.StopAtStepHook(last_step=20000 // hvd.size()),
+
+#    ]
 
     # global_step is automagically incremented by the optimizer
     global_step = tfv1.train.get_or_create_global_step()
-    apply_gradient_op = optimizer.apply_gradients(avg_tower_gradients, global_step=global_step)
+    apply_gradient_op = optimizer.apply_gradients(gradients, global_step=global_step)
 
     # Summaries
     step_summaries_op = tfv1.summary.merge_all('step_summaries')
@@ -174,10 +181,12 @@ def train():
     # Save checkpoints only on worker 0 to prevent other workers from corrupting them.
     checkpoint_dir = os.path.join(FLAGS.save_checkpoint_dir, 'train') if hvd.rank() == 0 else None
 
-    # with tfv1.Session(config=Config.session_config) as session:
-    with tf.train.MonitoredTrainingSession(checkpoint_dir=checkpoint_dir,
-                                           config=Config.session_config,
-                                           hooks=hooks) as session:
+    bcast = hvd.broadcast_global_variables(0)
+
+    with tfv1.Session(config=Config.session_config) as session:
+    #with tf.train.MonitoredTrainingSession(checkpoint_dir=checkpoint_dir,
+    #                                       config=Config.session_config,
+    #                                       hooks=hooks) as session:
         log_debug('Session opened.')
 
         # Prevent further graph changes
@@ -185,6 +194,7 @@ def train():
 
         # Load checkpoint or initialize variables
         load_or_init_graph_for_training(session)
+        bcast.run()
 
         def run_set(set_name, epoch, init_op, dataset=None):
             is_train = set_name == 'train'
