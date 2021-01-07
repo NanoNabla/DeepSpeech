@@ -56,6 +56,8 @@ def initialize_horovod():
 def train():
     exception_box = ExceptionBox()
 
+    is_master_proc = hvd.rank() == 0
+
     # Create training and validation datasets
     train_set = create_dataset(FLAGS.train_files.split(','),
                                batch_size=FLAGS.train_batch_size,
@@ -136,6 +138,9 @@ def train():
 
     loss, non_finite_files = calculate_mean_edit_distance_and_loss(iterator, dropout_rates, reuse=False)
     gradients = optimizer.compute_gradients(loss)
+
+    tfv1.summary.scalar(name='step_loss', tensor=loss, collections=['step_summaries'])
+    log_grads_and_vars(gradients)
 
     # Add hook to broadcast variables from rank 0 to all other processes during
     # initialization.
@@ -235,11 +240,8 @@ def train():
             # Batch loop
             while True:
                 try:
-                    # _, current_step, batch_loss, problem_files, step_summary = \
-                    #     session.run([train_op, global_step, loss, non_finite_files, step_summaries_op],
-                    #                 feed_dict=feed_dict)
-                    _, current_step, batch_loss, problem_files = \
-                        session.run([train_op, global_step, loss, non_finite_files],
+                    _, current_step, batch_loss, problem_files, step_summary = \
+                        session.run([train_op, global_step, loss, non_finite_files, step_summaries_op],
                                     feed_dict=feed_dict)
                     exception_box.raise_if_set()
                 except tf.errors.OutOfRangeError:
@@ -256,7 +258,8 @@ def train():
 
                 pbar.update(step_count)
 
-                #step_summary_writer.add_summary(step_summary, current_step)
+                if is_master_proc:
+                    step_summary_writer.add_summary(step_summary, current_step)
 
                 # if is_train and FLAGS.checkpoint_secs > 0 and time.time() - checkpoint_time > FLAGS.checkpoint_secs:
                 #     checkpoint_saver.save(session, checkpoint_path, global_step=current_step)
@@ -274,9 +277,11 @@ def train():
         try:
             for epoch in range(FLAGS.epochs):
                 # Training
-                log_progress('Training epoch %d...' % epoch)
+                if is_master_proc:
+                    log_progress('Training epoch %d...' % epoch)
                 train_loss, _ = run_set('train', epoch, train_init_op)
-                log_progress('Finished training epoch %d - loss: %f' % (epoch, train_loss))
+                if is_master_proc:
+                    log_progress('Finished training epoch %d - loss: %f' % (epoch, train_loss))
                 # checkpoint_saver.save(session, checkpoint_path, global_step=global_step)
 
                 if FLAGS.dev_files:
