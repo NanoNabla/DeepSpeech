@@ -235,8 +235,11 @@ def train():
             # Batch loop
             while True:
                 try:
-                    _, current_step, batch_loss, problem_files, step_summary = \
-                        session.run([train_op, global_step, loss, non_finite_files, step_summaries_op],
+                    # _, current_step, batch_loss, problem_files, step_summary = \
+                    #     session.run([train_op, global_step, loss, non_finite_files, step_summaries_op],
+                    #                 feed_dict=feed_dict)
+                    _, current_step, batch_loss, problem_files = \
+                        session.run([train_op, global_step, loss, non_finite_files],
                                     feed_dict=feed_dict)
                     exception_box.raise_if_set()
                 except tf.errors.OutOfRangeError:
@@ -253,7 +256,7 @@ def train():
 
                 pbar.update(step_count)
 
-                step_summary_writer.add_summary(step_summary, current_step)
+                #step_summary_writer.add_summary(step_summary, current_step)
 
                 # if is_train and FLAGS.checkpoint_secs > 0 and time.time() - checkpoint_time > FLAGS.checkpoint_secs:
                 #     checkpoint_saver.save(session, checkpoint_path, global_step=current_step)
