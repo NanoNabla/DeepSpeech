@@ -25,14 +25,14 @@ tfv1.logging.set_verbosity({
 from datetime import datetime
 from .util.config import Config, initialize_globals
 from .util.checkpoints import load_or_init_graph_for_training, reload_best_checkpoint
-from .util.feeding import create_dataset, audio_to_features
+from .util.feeding import create_dataset
 from .util.flags import create_flags, FLAGS
 from .util.helpers import check_ctcdecoder_version, ExceptionBox
 from .util.logging import create_progressbar, log_debug, log_error, log_info, log_progress
-from .util.io import open_remote, remove_remote, listdir_remote, is_remote_path, isdir_remote
+from .util.io import remove_remote, listdir_remote
 
-from .train import create_optimizer, get_tower_results, average_gradients, log_grads_and_vars, rnn_impl_static_rnn, \
-    rnn_impl_lstmblockfusedcell, create_model, export, test, do_single_file_inference, package_zip, \
+from .train import create_optimizer, get_tower_results, average_gradients, log_grads_and_vars, export, test, \
+    do_single_file_inference, package_zip, \
     early_training_checks
 
 try:
@@ -49,7 +49,7 @@ check_ctcdecoder_version()
 def initialize_horovod():
     hvd.init()
     # Pin GPU to be used to process local rank (one GPU per process)
-    #Config._config.gpu_options.visible_device_list = str(hvd.local_rank())
+    # Config._config.gpu_options.visible_device_list = str(hvd.local_rank())
     Config.available_devices = str(hvd.local_rank())
 
 
@@ -334,8 +334,6 @@ def train():
             pass
         log_info('FINISHED optimization in {}'.format(datetime.utcnow() - train_start_time))
     log_debug('Session closed.')
-
-
 
 
 def main(_):
