@@ -49,8 +49,10 @@ check_ctcdecoder_version()
 def initialize_horovod():
     hvd.init()
     # Pin GPU to be used to process local rank (one GPU per process)
-    # Config._config.gpu_options.visible_device_list = str(hvd.local_rank())
-    Config.available_devices = str(hvd.local_rank())
+    Config.visible_device_list = str(hvd.local_rank())
+
+    # TODO maybe set this?
+    #Config.available_devices = str(hvd.local_rank())
 
 
 def train():
