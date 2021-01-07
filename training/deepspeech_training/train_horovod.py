@@ -130,26 +130,11 @@ def train():
         log_info('Enabling automatic mixed precision training.')
         optimizer = tfv1.train.experimental.enable_mixed_precision_graph_rewrite(optimizer)
 
-    #    gradients, loss, non_finite_files = get_tower_results(iterator, optimizer, dropout_rates)
-
-    # Average tower gradients across GPUs
-    #    avg_tower_gradients = average_gradients(gradients)
-    #    log_grads_and_vars(avg_tower_gradients)
-
     loss, non_finite_files = calculate_mean_edit_distance_and_loss(iterator, dropout_rates, reuse=False)
     gradients = optimizer.compute_gradients(loss)
 
     tfv1.summary.scalar(name='step_loss', tensor=loss, collections=['step_summaries'])
     log_grads_and_vars(gradients)
-
-    # Add hook to broadcast variables from rank 0 to all other processes during
-    # initialization.
-    #    hooks = [
-    #        hvd.BroadcastGlobalVariablesHook(0)
-
-    #        tf.train.StopAtStepHook(last_step=20000 // hvd.size()),
-
-    #    ]
 
     # global_step is automagically incremented by the optimizer
     global_step = tfv1.train.get_or_create_global_step()
@@ -184,15 +169,9 @@ def train():
         with open_remote(flags_file, 'w') as fout:
             fout.write(FLAGS.flags_into_string())
 
-        # Save checkpoints only on worker 0 to prevent other workers from corrupting them.
-        checkpoint_dir = os.path.join(FLAGS.save_checkpoint_dir, 'train') if hvd.rank() == 0 else None
-
     bcast = hvd.broadcast_global_variables(0)
 
     with tfv1.Session(config=Config.session_config) as session:
-        # with tf.train.MonitoredTrainingSession(checkpoint_dir=checkpoint_dir,
-        #                                       config=Config.session_config,
-        #                                       hooks=hooks) as session:
         log_debug('Session opened.')
 
         # Prevent further graph changes
@@ -262,9 +241,9 @@ def train():
                 if is_master_proc:
                     step_summary_writer.add_summary(step_summary, current_step)
 
-                if is_master_proc and is_train and FLAGS.checkpoint_secs > 0 and time.time() - checkpoint_time > FLAGS.checkpoint_secs:
-                    checkpoint_saver.save(session, checkpoint_path, global_step=current_step)
-                    checkpoint_time = time.time()
+                    if is_train and FLAGS.checkpoint_secs > 0 and time.time() - checkpoint_time > FLAGS.checkpoint_secs:
+                        checkpoint_saver.save(session, checkpoint_path, global_step=current_step)
+                        checkpoint_time = time.time()
 
             pbar.finish()
             mean_loss = total_loss / step_count if step_count > 0 else 0.0
@@ -307,7 +286,7 @@ def train():
                         else:
                             epochs_without_improvement = 0
 
-                        # # Save new best model
+                        # Save new best model
                         if dev_loss < best_dev_loss:
                             best_dev_loss = dev_loss
                             save_path = best_dev_saver.save(session, best_dev_path, global_step=global_step,
@@ -396,7 +375,6 @@ def main(_):
 def run_script():
     create_flags()
     absl.app.run(main)
-
 
 if __name__ == '__main__':
     run_script()
