@@ -23,9 +23,9 @@ tfv1.logging.set_verbosity({
                            }.get(DESIRED_LOG_LEVEL))
 
 from datetime import datetime
-from .util.config_horovod import Config, initialize_globals
+from .util.config import Config, initialize_globals
 from .util.checkpoints import load_or_init_graph_for_training, reload_best_checkpoint
-from .util.feeding_horovod import create_dataset
+from .util.feeding import create_dataset
 from .util.flags import create_flags, FLAGS
 from .util.helpers import check_ctcdecoder_version, ExceptionBox
 from .util.logging import create_progressbar, log_debug, log_error, log_info, log_progress

@@ -76,12 +76,12 @@ def initialize_globals():
     # CPU device
     c.cpu_device = '/cpu:0'
 
-    # Available GPU devices
-    c.available_devices = get_available_gpus(c.session_config)
-
-    # If there is no GPU available, we fall back to CPU based operation
-    if not c.available_devices:
-        c.available_devices = [c.cpu_device]
+    # # Available GPU devices
+    # c.available_devices = get_available_gpus(c.session_config)
+    #
+    # # If there is no GPU available, we fall back to CPU based operation
+    # if not c.available_devices:
+    #     c.available_devices = [c.cpu_device]
 
     if FLAGS.bytes_output_mode:
         c.alphabet = UTF8Alphabet()

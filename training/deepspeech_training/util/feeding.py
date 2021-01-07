@@ -142,7 +142,7 @@ def create_dataset(sources,
     if cache_path:
         dataset = dataset.cache(cache_path)
     dataset = (dataset.window(batch_size, drop_remainder=train_phase).flat_map(batch_fn)
-                      .prefetch(len(Config.available_devices)))
+                      .prefetch(Config.num_gpu))
     return dataset
 
 
@@ -178,5 +178,5 @@ def split_audio_file(audio_path,
     ods = create_batch_set(outlier_batch_size,
                            lambda start, end, f, fl: end - start > int(outlier_duration_ms))
     dataset = nds.concatenate(ods)
-    dataset = dataset.prefetch(len(Config.available_devices))
+    dataset = dataset.prefetch(Config.num_gpu)
     return dataset
