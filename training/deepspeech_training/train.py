@@ -831,12 +831,14 @@ def train_with_horovod():
                     data['mean_loss'] = total_loss / step_count if step_count else 0.0
                     return progressbar.widgets.FormatLabel.__call__(self, progress, data, **kwargs)
 
-            prefix = 'Epoch {} | {:>10}'.format(epoch, human_readable_set_names[set_name])
-            widgets = [' | ', progressbar.widgets.Timer(),
-                       ' | Steps: ', progressbar.widgets.Counter(),
-                       ' | ', LossWidget()]
-            suffix = ' | Dataset: {}'.format(dataset) if dataset else None
-            pbar = create_progressbar(prefix=prefix, widgets=widgets, suffix=suffix).start()
+            if Config.is_master_process:
+                # TODO endl seems not to work with horovod
+                prefix = 'Epoch {} | {:>10}'.format(epoch, human_readable_set_names[set_name])
+                widgets = [' | ', progressbar.widgets.Timer(),
+                           ' | Steps: ', progressbar.widgets.Counter(),
+                           ' | ', LossWidget()]
+                suffix = ' | Dataset: {}'.format(dataset) if dataset else None
+                pbar = create_progressbar(prefix=prefix, widgets=widgets, suffix=suffix).start()
 
             # Initialize iterator to the appropriate dataset
             session.run(init_op)
@@ -860,16 +862,15 @@ def train_with_horovod():
                 total_loss += batch_loss
                 step_count += 1
 
-                pbar.update(step_count)
-
                 if Config.is_master_process:
+                    pbar.update(step_count)
                     step_summary_writer.add_summary(step_summary, current_step)
 
                     if is_train and FLAGS.checkpoint_secs > 0 and time.time() - checkpoint_time > FLAGS.checkpoint_secs:
                         checkpoint_saver.save(session, checkpoint_path, global_step=current_step)
                         checkpoint_time = time.time()
 
-            pbar.finish()
+                    pbar.finish()
             mean_loss = total_loss / step_count if step_count > 0 else 0.0
             return mean_loss, step_count
 
