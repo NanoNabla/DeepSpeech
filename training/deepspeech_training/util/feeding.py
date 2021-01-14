@@ -135,16 +135,20 @@ def create_dataset(sources,
 
     process_fn = partial(entry_to_features, train_phase=train_phase, augmentations=augmentations)
 
-    dataset = (tf.data.Dataset.from_generator(remember_exception(generate_values, exception_box),
-                                              output_types=(tf.string, tf.float32, tf.int32,
-                                                            (tf.int64, tf.int32, tf.int64), tf.float64))
-                              .map(process_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE))
+    dataset = tf.data.Dataset.from_generator(remember_exception(generate_values, exception_box),
+                                             output_types=(tf.string, tf.float32, tf.int32,
+                                                           (tf.int64, tf.int32, tf.int64), tf.float64))
+    if FLAGS.horovod:
+        # Using horovod Iterator.get_next() is not aware of different devices.
+        # A.shard(n, i) will contain all elements of A whose index mod n = i.
+        import horovod.tensorflow as hvd
+        dataset = dataset.shard(hvd.size(), hvd.rank())
+    dataset = dataset.map(process_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     if cache_path:
         dataset = dataset.cache(cache_path)
     dataset = (dataset.window(batch_size, drop_remainder=train_phase).flat_map(batch_fn)
                .prefetch(Config.num_devices))
     return dataset
-
 
 def split_audio_file(audio_path,
                      audio_format=DEFAULT_FORMAT,
