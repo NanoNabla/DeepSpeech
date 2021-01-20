@@ -94,7 +94,8 @@ def create_dataset(sources,
                    limit=0,
                    exception_box=None,
                    process_ahead=None,
-                   buffering=1 * MEGABYTE):
+                   buffering=1 * MEGABYTE,
+                   split_dataset=False):
     epoch_counter = Counter()  # survives restarts of the dataset and its generator
 
     def generate_values():
@@ -138,7 +139,7 @@ def create_dataset(sources,
     dataset = tf.data.Dataset.from_generator(remember_exception(generate_values, exception_box),
                                              output_types=(tf.string, tf.float32, tf.int32,
                                                            (tf.int64, tf.int32, tf.int64), tf.float64))
-    if FLAGS.horovod:
+    if split_dataset:
         # Using horovod Iterator.get_next() is not aware of different devices.
         # A.shard(n, i) will contain all elements of A whose index mod n = i.
         import horovod.tensorflow as hvd
@@ -146,8 +147,12 @@ def create_dataset(sources,
     dataset = dataset.map(process_fn, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     if cache_path:
         dataset = dataset.cache(cache_path)
-    dataset = (dataset.window(batch_size, drop_remainder=train_phase).flat_map(batch_fn)
-               .prefetch(Config.num_devices))
+    dataset = (dataset.window(batch_size, drop_remainder=train_phase).flat_map(batch_fn))
+    if split_dataset:
+        #TODO is there a way to get a proper value?
+        dataset = dataset.prefetch(2)
+    else:
+        dataset = dataset.prefetch(Config.num_devices)
     return dataset
 
 def split_audio_file(audio_path,

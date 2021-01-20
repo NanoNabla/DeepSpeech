@@ -424,7 +424,8 @@ def train():
                                process_ahead=len(Config.available_devices) * FLAGS.train_batch_size * 2,
                                reverse=FLAGS.reverse_train,
                                limit=FLAGS.limit_train,
-                               buffering=FLAGS.read_buffer)
+                               buffering=FLAGS.read_buffer,
+                               split_dataset=False)
 
     iterator = tfv1.data.Iterator.from_structure(tfv1.data.get_output_types(train_set),
                                                  tfv1.data.get_output_shapes(train_set),
@@ -442,7 +443,8 @@ def train():
                                    process_ahead=len(Config.available_devices) * FLAGS.dev_batch_size * 2,
                                    reverse=FLAGS.reverse_dev,
                                    limit=FLAGS.limit_dev,
-                                   buffering=FLAGS.read_buffer) for source in dev_sources]
+                                   buffering=FLAGS.read_buffer,
+                                   split_dataset=False) for source in dev_sources]
         dev_init_ops = [iterator.make_initializer(dev_set) for dev_set in dev_sets]
 
     if FLAGS.metrics_files:
@@ -454,7 +456,8 @@ def train():
                                        process_ahead=len(Config.available_devices) * FLAGS.dev_batch_size * 2,
                                        reverse=FLAGS.reverse_dev,
                                        limit=FLAGS.limit_dev,
-                                       buffering=FLAGS.read_buffer) for source in metrics_sources]
+                                       buffering=FLAGS.read_buffer,
+                                       split_dataset=False) for source in metrics_sources]
         metrics_init_ops = [iterator.make_initializer(metrics_set) for metrics_set in metrics_sets]
 
     # Dropout
@@ -694,7 +697,8 @@ def train_with_horovod():
                                process_ahead=Config.num_devices * FLAGS.train_batch_size * 2,
                                reverse=FLAGS.reverse_train,
                                limit=FLAGS.limit_train,
-                               buffering=FLAGS.read_buffer)
+                               buffering=FLAGS.read_buffer,
+                               split_dataset=True)
 
     iterator = tfv1.data.Iterator.from_structure(tfv1.data.get_output_types(train_set),
                                                  tfv1.data.get_output_shapes(train_set),
@@ -712,7 +716,8 @@ def train_with_horovod():
                                    process_ahead=Config.num_devices * FLAGS.dev_batch_size * 2,
                                    reverse=FLAGS.reverse_dev,
                                    limit=FLAGS.limit_dev,
-                                   buffering=FLAGS.read_buffer) for source in dev_sources]
+                                   buffering=FLAGS.read_buffer,
+                                   split_dataset=True) for source in dev_sources]
         dev_init_ops = [iterator.make_initializer(dev_set) for dev_set in dev_sets]
 
     if FLAGS.metrics_files:
@@ -724,7 +729,8 @@ def train_with_horovod():
                                        process_ahead=Config.num_devices * FLAGS.dev_batch_size * 2,
                                        reverse=FLAGS.reverse_dev,
                                        limit=FLAGS.limit_dev,
-                                       buffering=FLAGS.read_buffer) for source in metrics_sources]
+                                       buffering=FLAGS.read_buffer,
+                                       split_dataset=True) for source in metrics_sources]
         metrics_init_ops = [iterator.make_initializer(metrics_set) for metrics_set in metrics_sets]
 
     # Dropout
