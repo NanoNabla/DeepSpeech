@@ -895,28 +895,30 @@ def train_with_horovod():
                     log_progress('Finished training epoch %d - loss: %f' % (epoch, train_loss))
                     checkpoint_saver.save(session, checkpoint_path, global_step=global_step)
 
-                if Config.is_master_process:
-                    if FLAGS.dev_files:
-                        # Validation
-                        dev_loss = 0.0
-                        total_steps = 0
-                        for source, init_op in zip(dev_sources, dev_init_ops):
+                if FLAGS.dev_files:
+                    # Validation
+                    dev_loss = 0.0
+                    total_steps = 0
+                    for source, init_op in zip(dev_sources, dev_init_ops):
+                        if Config.is_master_process:
                             log_progress('Validating epoch %d on %s...' % (epoch, source))
-                            set_loss, steps = run_set('dev', epoch, init_op, dataset=source)
-                            dev_loss += set_loss * steps
-                            total_steps += steps
+                        set_loss, steps = run_set('dev', epoch, init_op, dataset=source)
+                        dev_loss += set_loss * steps
+                        total_steps += steps
+                        if Config.is_master_process:
                             log_progress('Finished validating epoch %d on %s - loss: %f' % (epoch, source, set_loss))
 
-                        dev_loss = dev_loss / total_steps
-                        dev_losses.append(dev_loss)
+                    dev_loss = dev_loss / total_steps
+                    dev_losses.append(dev_loss)
 
-                        # Count epochs without an improvement for early stopping and reduction of learning rate on a plateau
-                        # the improvement has to be greater than FLAGS.es_min_delta
-                        if dev_loss > best_dev_loss - FLAGS.es_min_delta:
-                            epochs_without_improvement += 1
-                        else:
-                            epochs_without_improvement = 0
+                    # Count epochs without an improvement for early stopping and reduction of learning rate on a plateau
+                    # the improvement has to be greater than FLAGS.es_min_delta
+                    if dev_loss > best_dev_loss - FLAGS.es_min_delta:
+                        epochs_without_improvement += 1
+                    else:
+                        epochs_without_improvement = 0
 
+                    if Config.is_master_process:
                         # Save new best model
                         if dev_loss < best_dev_loss:
                             best_dev_loss = dev_loss
@@ -924,28 +926,30 @@ def train_with_horovod():
                                                             latest_filename='best_dev_checkpoint')
                             log_info("Saved new best validating model with loss %f to: %s" % (best_dev_loss, save_path))
 
-                        # Early stopping
-                        if FLAGS.early_stop and epochs_without_improvement == FLAGS.es_epochs:
+                    # Early stopping
+                    if FLAGS.early_stop and epochs_without_improvement == FLAGS.es_epochs:
+                        if Config.is_master_process:
                             log_info('Early stop triggered as the loss did not improve the last {} epochs'.format(
                                 epochs_without_improvement))
-                            break
+                        break
 
-                        # Reduce learning rate on plateau
-                        # If the learning rate was reduced and there is still no improvement
-                        # wait FLAGS.plateau_epochs before the learning rate is reduced again
-                        if (
-                                FLAGS.reduce_lr_on_plateau
-                                and epochs_without_improvement > 0
-                                and epochs_without_improvement % FLAGS.plateau_epochs == 0
-                        ):
-                            # Reload checkpoint that we use the best_dev weights again
-                            reload_best_checkpoint(session)
+                    # Reduce learning rate on plateau
+                    # If the learning rate was reduced and there is still no improvement
+                    # wait FLAGS.plateau_epochs before the learning rate is reduced again
+                    if (
+                            FLAGS.reduce_lr_on_plateau
+                            and epochs_without_improvement > 0
+                            and epochs_without_improvement % FLAGS.plateau_epochs == 0
+                    ):
+                        # Reload checkpoint that we use the best_dev weights again
+                        reload_best_checkpoint(session)
 
-                            # Reduce learning rate
-                            session.run(reduce_learning_rate_op)
-                            current_learning_rate = learning_rate_var.eval()
+                        # Reduce learning rate
+                        session.run(reduce_learning_rate_op)
+                        current_learning_rate = learning_rate_var.eval()
+                        if Config.is_master_process:
                             log_info('Encountered a plateau, reducing learning rate to {}'.format(
-                                current_learning_rate))
+                            current_learning_rate))
 
                             # Overwrite best checkpoint with new learning rate value
                             save_path = best_dev_saver.save(session, best_dev_path, global_step=global_step,
@@ -955,17 +959,23 @@ def train_with_horovod():
                     if FLAGS.metrics_files:
                         # Read only metrics, not affecting best validation loss tracking
                         for source, init_op in zip(metrics_sources, metrics_init_ops):
-                            log_progress('Metrics for epoch %d on %s...' % (epoch, source))
+                            if Config.is_master_process:
+                                log_progress('Metrics for epoch %d on %s...' % (epoch, source))
                             set_loss, _ = run_set('metrics', epoch, init_op, dataset=source)
-                            log_progress('Metrics for epoch %d on %s - loss: %f' % (epoch, source, set_loss))
+                            if Config.is_master_process:
+                                log_progress('Metrics for epoch %d on %s - loss: %f' % (epoch, source, set_loss))
 
-                print('-' * 80)
+                if Config.is_master_process:
+                    print('-' * 80)
 
 
         except KeyboardInterrupt:
             pass
-        log_info('FINISHED optimization in {}'.format(datetime.utcnow() - train_start_time))
-    log_debug('Session closed.')
+        if Config.is_master_process:
+            log_info('FINISHED optimization in {}'.format(datetime.utcnow() - train_start_time))
+    if Config.is_master_process:
+        log_debug('Session closed.')
+
 
 
 def test():
