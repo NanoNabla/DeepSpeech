@@ -196,6 +196,23 @@ python3 DeepSpeech.py --train_files ./train.csv --dev_files ./dev.csv --test_fil
 
 On a Volta generation V100 GPU, automatic mixed precision speeds up DeepSpeech training and evaluation by ~30%-40%.
 
+Distributed training using Horovod
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you have a capable distributed compute architecture (e.g. HPC cluster) with several GPUs per node and fast network,
+we offer the opportunity to do distributed training using `Horovod <https://github.com/horovod/horovod>`_ .
+
+Horovod is capable of using MPI and NVIDIA's NCCL for highly optimized inter-process communication,
+also offering Gloo as an easy-to-setup communication backend at the same time.
+
+For more information on how to setup and tune your horovod environment visit `Horovod's Github <https://github.com/horovod/horovod>`_.
+
+To start training on 4 machines with 4 GPUs each:
+
+.. code-block:: bash
+
+    horovodrun -np 16 -H server1:4,server2:4,server3:4,server4:4 python3 DeepSpeech.py --train_files [...] --horovod
+
 Checkpointing
 ^^^^^^^^^^^^^
 
